@@ -1,0 +1,28 @@
+version: 2
+jobs:
+  build:
+    docker:
+      - image: circleci/python:3.10
+    steps:
+      - checkout
+      - restore_cache:
+          keys:
+            - v2-poetry-{{ checksum "poetry.lock" }}
+      - run:
+          name: install dependencies
+          command: |
+            curl -sSL https://install.python-poetry.org | python3 -
+            poetry install
+      - run:
+          name: setup pokedex
+          command: poetry run pokedex lookup eevee 2>/dev/null || poetry run pokedex setup
+      - save_cache:
+          paths:
+            - .venv
+          key: v2-poetry-{{ checksum "poetry.lock" }}
+      - run:
+          name: run tests
+          command: poetry run pytest --cov=./
+      - run:
+          name: upload coverage
+          command: poetry run bash <(curl -s https://codecov.io/bash)
